@@ -25,18 +25,20 @@ export default function TruckLoginPage() {
         body: JSON.stringify({ panel: 'truck', email, password }),
       });
 
+      const text = await res.text();
+      let body: Record<string, string> = {};
+      try { body = JSON.parse(text); } catch {}
+
       if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem('truck_admin_token', data.token);
-        localStorage.setItem('truck_admin_role', data.role);
-        localStorage.setItem('truck_admin_email', data.email);
+        localStorage.setItem('truck_admin_token', body.token);
+        localStorage.setItem('truck_admin_role', body.role);
+        localStorage.setItem('truck_admin_email', body.email);
         toast.success('Welcome to Truck Panel!');
         setTimeout(() => router.push('/truck'), 500);
         return;
       }
 
-      const err = await res.json();
-      toast.error(err.error || 'Invalid credentials');
+      toast.error(body.error || 'Invalid credentials');
     } catch {
       toast.error('Connection failed. Try again.');
     } finally {
