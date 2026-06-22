@@ -1,20 +1,22 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
 const TRUCK_OS_TYPES = ['truck_os_14ft', 'truck_os_20ft', 'truck_os_container', 'truck_os_trailer'];
 const ALL_TRUCK_TYPES = [...TRUCK_CITY_TYPES, ...TRUCK_OS_TYPES];
 
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_panel_token') : ''; }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
 const isTruckBooking = (b: any) =>
+  b?.service_category === 'truck' ||
   b?.service_type?.category === 'truck' ||
+  ALL_TRUCK_TYPES.includes(b?.service_slug ?? '') ||
   ALL_TRUCK_TYPES.includes(b?.service_type?.slug ?? '') ||
   ALL_TRUCK_TYPES.includes(b?.vehicle_type ?? '');
 
@@ -88,7 +90,7 @@ export default function TruckOverviewPage() {
   const cityB = todayB.filter(b => TRUCK_CITY_TYPES.includes(b.service_type?.slug || b.vehicle_type || ''));
   const osB = todayB.filter(b => TRUCK_OS_TYPES.includes(b.service_type?.slug || b.vehicle_type || ''));
   const revenue = completed.reduce((s: number, b: any) => s + (b.final_fare || b.estimated_fare || 0), 0);
-  const onlineDrivers = drivers.filter(d => d.online || d.status === 'online');
+  const onlineDrivers = drivers.filter(d => d.is_online);
 
   // City card stats
   const cityCompleted = cityB.filter(b => b.status === 'completed');
@@ -107,7 +109,7 @@ export default function TruckOverviewPage() {
     count: todayB.filter(b => g.types.includes(b.service_type?.slug || b.vehicle_type || '')).length,
     revenue: todayB.filter(b => g.types.includes(b.service_type?.slug || b.vehicle_type || '') && b.status === 'completed')
       .reduce((s: number, b: any) => s + (b.final_fare || b.estimated_fare || 0), 0),
-    driversOnline: drivers.filter(d => g.types.includes(d.vehicle_type || '') && (d.online || d.status === 'online')).length,
+    driversOnline: drivers.filter(d => g.types.includes(d.vehicle_type || '') && (d.is_online)).length,
   }));
 
   // Hourly
@@ -310,8 +312,8 @@ export default function TruckOverviewPage() {
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">#{b.id?.slice(-6).toUpperCase()}</td>
                       <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${isCity ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{isCity ? '🏙 City' : '🗺 OS'}</span></td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{getTruckSize(slug)}</td>
-                      <td className="px-4 py-3 text-gray-700">{b.rider?.name || '—'}</td>
-                      <td className="px-4 py-3 text-gray-700">{b.driver?.name || 'Unassigned'}</td>
+                      <td className="px-4 py-3 text-gray-700">{(b.rider_name || b.rider?.name) || '—'}</td>
+                      <td className="px-4 py-3 text-gray-700">{(b.driver_name || b.driver?.name) || 'Unassigned'}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.pickup_address?.slice(0, 18) || '—'}</td>
                       <td className="px-4 py-3 text-gray-600">{b.distance_km ? `${b.distance_km}km` : '—'}</td>
                       <td className="px-4 py-3 font-semibold text-gray-800">₹{(b.final_fare || b.estimated_fare || 0).toLocaleString()}</td>

@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Pagination from '@/components/Pagination';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_OS_TYPES = ['truck_os_14ft', 'truck_os_20ft', 'truck_os_container', 'truck_os_trailer'];
 const STATUS_COLORS: Record<string, string> = {
   completed: '#10B981', cancelled: '#EF4444', in_progress: '#8B5CF6', accepted: '#F59E0B', searching: '#6B7280',
@@ -18,7 +18,7 @@ const OS_VEHICLES = [
 
 const POPULAR_CITIES = ['Mumbai', 'Jaipur', 'Chandigarh', 'Lucknow', 'Agra', 'Pune', 'Hyderabad', 'Kolkata'];
 
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_panel_token') : ''; }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
 export default function OutstationPage() {
@@ -61,7 +61,7 @@ export default function OutstationPage() {
   const vehicleStats = OS_VEHICLES.map(v => {
     const vB = bookings.filter(b => (b.service_type?.slug || b.vehicle_type || '') === v.slug);
     const todayVB = todayB.filter(b => (b.service_type?.slug || b.vehicle_type || '') === v.slug);
-    const online = drivers.filter(d => d.vehicle_type === v.slug && (d.online || d.status === 'online'));
+    const online = drivers.filter(d => d.vehicle_type === v.slug && (d.is_online));
     const rev = todayVB.filter(b => b.status === 'completed').reduce((s: number, b: any) => s + (b.final_fare || b.estimated_fare || 0), 0);
     return { ...v, rides: todayVB.length, total: vB.length, revenue: rev, driversOnline: online.length };
   });
@@ -174,8 +174,8 @@ export default function OutstationPage() {
                   <tr key={b.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">#{b.id?.slice(-8).toUpperCase()}</td>
                     <td className="px-4 py-3"><span className="text-xs px-2 py-1 rounded-lg font-medium bg-purple-50 text-purple-700">{OS_VEHICLES.find(v => v.slug === (b.service_type?.slug || b.vehicle_type))?.label || 'OS Truck'}</span></td>
-                    <td className="px-4 py-3 text-gray-700">{b.rider?.name || '—'}</td>
-                    <td className="px-4 py-3 text-gray-700">{b.driver?.name || 'Unassigned'}</td>
+                    <td className="px-4 py-3 text-gray-700">{(b.rider_name || b.rider?.name) || '—'}</td>
+                    <td className="px-4 py-3 text-gray-700">{(b.driver_name || b.driver?.name) || 'Unassigned'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.pickup_address?.slice(0, 20) || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.drop_address?.slice(0, 20) || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{b.distance_km ? `${b.distance_km} km` : '—'}</td>

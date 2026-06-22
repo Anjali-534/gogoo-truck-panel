@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { X, Phone, XCircle } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
 const TRUCK_OS_TYPES = ['truck_os_14ft', 'truck_os_20ft', 'truck_os_container', 'truck_os_trailer'];
 const ALL_TRUCK_TYPES = [...TRUCK_CITY_TYPES, ...TRUCK_OS_TYPES];
@@ -12,11 +12,13 @@ const STATUS_COLORS: Record<string, string> = {
 };
 const PAGE_SIZE = 50;
 
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_panel_token') : ''; }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
 const isTruckBooking = (b: any) =>
+  b?.service_category === 'truck' ||
   b?.service_type?.category === 'truck' ||
+  ALL_TRUCK_TYPES.includes(b?.service_slug ?? '') ||
   ALL_TRUCK_TYPES.includes(b?.service_type?.slug ?? '') ||
   ALL_TRUCK_TYPES.includes(b?.vehicle_type ?? '');
 
@@ -66,7 +68,7 @@ export default function TruckBookingsPage() {
     if (statusFilter !== 'all' && b.status !== statusFilter) return false;
     if (search) {
       const q = search.toLowerCase();
-      return b.id?.toLowerCase().includes(q) || b.rider?.name?.toLowerCase().includes(q) || b.driver?.name?.toLowerCase().includes(q) || b.pickup_address?.toLowerCase().includes(q);
+      return b.id?.toLowerCase().includes(q) || (b.rider_name || b.rider?.name)?.toLowerCase().includes(q) || (b.driver_name || b.driver?.name)?.toLowerCase().includes(q) || b.pickup_address?.toLowerCase().includes(q);
     }
     return true;
   });
@@ -161,8 +163,8 @@ export default function TruckBookingsPage() {
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">#{b.id?.slice(-8).toUpperCase()}</td>
                       <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${isCity ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{isCity ? '🏙 City' : '🗺 OS'}</span></td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{getTruckSize(slug)}</td>
-                      <td className="px-4 py-3"><p className="font-medium text-gray-800">{b.rider?.name || '—'}</p><p className="text-xs text-gray-400">{b.rider?.phone || ''}</p></td>
-                      <td className="px-4 py-3"><p className="font-medium text-gray-800">{b.driver?.name || 'Unassigned'}</p><p className="text-xs text-gray-400">{b.driver?.vehicle_number || ''}</p></td>
+                      <td className="px-4 py-3"><p className="font-medium text-gray-800">{(b.rider_name || b.rider?.name) || '—'}</p><p className="text-xs text-gray-400">{(b.rider_phone || b.rider?.phone) || ''}</p></td>
+                      <td className="px-4 py-3"><p className="font-medium text-gray-800">{(b.driver_name || b.driver?.name) || 'Unassigned'}</p><p className="text-xs text-gray-400">{(b.vehicle_number || b.driver?.vehicle_number) || ''}</p></td>
                       <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.pickup_address?.slice(0, 22) || '—'}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.drop_address?.slice(0, 22) || '—'}</td>
                       <td className="px-4 py-3 text-gray-600">{b.distance_km ? `${b.distance_km}km` : '—'}</td>

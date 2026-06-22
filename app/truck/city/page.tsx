@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Pagination from '@/components/Pagination';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
 const STATUS_COLORS: Record<string, string> = {
   completed: '#10B981', cancelled: '#EF4444', in_progress: '#3B82F6', accepted: '#F59E0B', searching: '#6B7280',
@@ -16,7 +16,7 @@ const CITY_VEHICLES = [
   { key: 'container', slug: 'truck_city_container', label: 'Container', emoji: '📦', capacity: '8 tons' },
 ];
 
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_panel_token') : ''; }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
 export default function CityDeliveryPage() {
@@ -49,7 +49,7 @@ export default function CityDeliveryPage() {
     const todayVB = todayB.filter(b => (b.service_type?.slug || b.vehicle_type || '') === v.slug);
     const completed = vB.filter(b => b.status === 'completed');
     const revenue = todayVB.filter(b => b.status === 'completed').reduce((s: number, b: any) => s + (b.final_fare || b.estimated_fare || 0), 0);
-    const onlineD = drivers.filter(d => d.vehicle_type === v.slug && (d.online || d.status === 'online'));
+    const onlineD = drivers.filter(d => d.vehicle_type === v.slug && (d.is_online));
     return { ...v, rides: todayVB.length, revenue, driversOnline: onlineD.length, totalRides: completed.length };
   });
 
@@ -126,8 +126,8 @@ export default function CityDeliveryPage() {
                   <tr key={b.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">#{b.id?.slice(-8).toUpperCase()}</td>
                     <td className="px-4 py-3 text-xs px-2 py-1"><span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs font-medium">{CITY_VEHICLES.find(v => v.slug === (b.service_type?.slug || b.vehicle_type))?.label || 'City Truck'}</span></td>
-                    <td className="px-4 py-3 text-gray-700">{b.rider?.name || '—'}</td>
-                    <td className="px-4 py-3 text-gray-700">{b.driver?.name || 'Unassigned'}</td>
+                    <td className="px-4 py-3 text-gray-700">{(b.rider_name || b.rider?.name) || '—'}</td>
+                    <td className="px-4 py-3 text-gray-700">{(b.driver_name || b.driver?.name) || 'Unassigned'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.pickup_address?.slice(0, 22) || '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs max-w-28 truncate">{b.drop_address?.slice(0, 22) || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{b.distance_km ? `${b.distance_km}km` : '—'}</td>

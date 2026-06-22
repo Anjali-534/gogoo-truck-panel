@@ -1,11 +1,11 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
 const TRUCK_OS_TYPES = ['truck_os_14ft', 'truck_os_20ft', 'truck_os_container', 'truck_os_trailer'];
 const ALL_TRUCK_TYPES = [...TRUCK_CITY_TYPES, ...TRUCK_OS_TYPES];
@@ -14,7 +14,7 @@ const VEHICLE_LABEL: Record<string, string> = {
   truck_os_14ft: '14ft OS', truck_os_20ft: '20ft OS', truck_os_container: 'Box OS', truck_os_trailer: 'Trailer',
 };
 
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_panel_token') : ''; }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}` }; }
 
 const isTruckBooking = (b: any) =>

@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, ShieldOff, Bell } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
 const TRUCK_OS_TYPES = ['truck_os_14ft', 'truck_os_20ft', 'truck_os_container', 'truck_os_trailer'];
 const ALL_TRUCK_TYPES = [...TRUCK_CITY_TYPES, ...TRUCK_OS_TYPES];
@@ -23,7 +23,7 @@ const TABS = [
   { key: 'trailer', label: 'Trailer' }, { key: 'blocked', label: 'Blocked' },
 ];
 
-function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_panel_token') : ''; }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' }; }
 
 export default function TruckDriversPage() {
@@ -62,8 +62,8 @@ export default function TruckDriversPage() {
 
   const stats = {
     total: drivers.length,
-    online: drivers.filter(d => d.online || d.status === 'online').length,
-    offline: drivers.filter(d => !d.online && d.status !== 'online' && !d.is_blocked).length,
+    online: drivers.filter(d => d.is_online).length,
+    offline: drivers.filter(d => !d.is_online && !d.is_blocked).length,
     blocked: drivers.filter(d => d.is_blocked).length,
     city: drivers.filter(d => TRUCK_CITY_TYPES.includes(d.vehicle_type || '')).length,
     outstation: drivers.filter(d => TRUCK_OS_TYPES.includes(d.vehicle_type || '')).length,
@@ -139,10 +139,10 @@ export default function TruckDriversPage() {
                       <td className="px-4 py-3" style={{ color: (d.wallet_balance || 0) < 0 ? '#EF4444' : '#374151' }}>₹{(d.wallet_balance || 0).toLocaleString()}</td>
                       <td className="px-4 py-3">
                         {d.is_blocked ? <span className="flex items-center gap-1 text-xs text-red-600"><span className="w-2 h-2 bg-red-500 rounded-full" /> Blocked</span>
-                          : d.online || d.status === 'online' ? <span className="flex items-center gap-1 text-xs text-green-600"><span className="w-2 h-2 bg-green-500 rounded-full" /> Online</span>
+                          : d.is_online ? <span className="flex items-center gap-1 text-xs text-green-600"><span className="w-2 h-2 bg-green-500 rounded-full" /> Online</span>
                             : <span className="flex items-center gap-1 text-xs text-gray-500"><span className="w-2 h-2 bg-gray-400 rounded-full" /> Offline</span>}
                       </td>
-                      <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${d.docs_verified ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>{d.docs_verified ? '✓ OK' : '⏳'}</span></td>
+                      <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${d.is_verified ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'}`}>{d.is_verified ? '✓ OK' : '⏳'}</span></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
                           <Link href={`/truck/drivers/${d.id}`} className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors" title="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg></Link>
