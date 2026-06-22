@@ -22,11 +22,11 @@ export default function TruckLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
 
   useEffect(() => {
-    if (!localStorage.getItem('truck_panel_token')) router.push('/');
+    if (!localStorage.getItem('truck_admin_token')) router.push('/');
   }, [router]);
 
   function logout() {
-    localStorage.removeItem('truck_panel_token');
+    localStorage.removeItem('truck_admin_token');
     router.push('/');
   }
 
