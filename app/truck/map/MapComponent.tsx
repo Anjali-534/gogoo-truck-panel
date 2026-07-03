@@ -35,11 +35,36 @@ function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
 function emptyFC(): GeoJSON.FeatureCollection { return { type: "FeatureCollection", features: [] }; }
 
+function formatAgo(ms: number): string {
+  const secs = Math.round(ms / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  return `${Math.round(secs / 60)}m ago`;
+}
+
+// Server-side proxy — never exposes OLA_MAPS_KEY to the panel, and caches
+// by rounded coordinate so repeat clicks on a driver that hasn't moved
+// don't re-hit Ola. Called only on marker click, never pre-fetched.
+async function fetchAddress(lat: number, lng: number, authToken: string | null): Promise<string> {
+  try {
+    const res = await axios.get(`${API}/gogoo/geocode/reverse`, {
+      headers: { Authorization: `Bearer ${authToken}` },
+      params: { lat, lng },
+      timeout: 10000,
+    });
+    return res.data?.address || "";
+  } catch {
+    return "";
+  }
+}
+
 export default function MapComponent() {
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const driverPrevCoords = useRef<Record<string, [number, number]>>({});
   const animFrameRef = useRef<number | null>(null);
+  // Client-side reverse-geocode cache, keyed by driver id — re-clicking the
+  // same marker reuses this unless it's moved more than ~100m.
+  const driverGeoCache = useRef<Record<string, { address: string; lat: number; lng: number }>>({});
 
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [bookings, setBookings] = useState<LiveBooking[]>([]);
@@ -113,7 +138,19 @@ export default function MapComponent() {
       map.on("click", "driver-points", (e) => {
         const f = e.features?.[0];
         if (!f) return;
-        new maplibregl.Popup({ offset: 16 }).setLngLat((f.geometry as any).coordinates).setHTML((f.properties as any).popupHtml).addTo(map);
+        const p = f.properties as any;
+        const [lng, lat] = (f.geometry as any).coordinates as [number, number];
+        const popup = new maplibregl.Popup({ offset: 16 }).setLngLat([lng, lat]).setHTML(p.popupHtml).addTo(map);
+
+        const cached = driverGeoCache.current[p.id];
+        const moved = cached ? haversineKm(cached.lat, cached.lng, lat, lng) > 0.1 : true;
+        if (!cached || moved) {
+          fetchAddress(lat, lng, token()).then((address) => {
+            driverGeoCache.current[p.id] = { address, lat, lng };
+            const el = popup.getElement()?.querySelector(`#geo-${p.id}`);
+            if (el) el.textContent = address ? `📍 ${address}` : "📍 Location unavailable";
+          });
+        }
       });
       map.on("click", "booking-points", (e) => {
         const f = e.features?.[0];
@@ -183,6 +220,15 @@ export default function MapComponent() {
         etaLine = `<div style="color:#F97316;font-size:11px;margin-top:4px">📍 ~${km < 1 ? Math.round(km * 1000) + " m" : km.toFixed(1) + " km"} to pickup</div>`;
       }
 
+      const cachedGeo = driverGeoCache.current[d.id];
+      const hasFreshGeo = cachedGeo && haversineKm(cachedGeo.lat, cachedGeo.lng, lat, lng) <= 0.1;
+      const geoLine = hasFreshGeo
+        ? `📍 ${cachedGeo!.address || "Location unavailable"}`
+        : "📍 Locating…";
+      const updatedAgo = d.location_updated_at
+        ? `Updated ${formatAgo(now - new Date(d.location_updated_at).getTime())}${stale ? " (STALE)" : ""}`
+        : "Updated —";
+
       const popupHtml = `
         <div style="font-family:system-ui;min-width:170px;padding:4px">
           <div style="font-weight:800;font-size:14px;margin-bottom:4px">${CATEGORY_EMOJI} ${d.name}</div>
@@ -193,6 +239,13 @@ export default function MapComponent() {
           </div>
           <div style="color:#6B7280;font-size:11px;margin-top:4px">${d.total_rides} rides</div>
           ${etaLine}
+          <div id="geo-${d.id}" style="color:#374151;font-size:12px;margin-top:6px;line-height:1.4">${geoLine}</div>
+          <div style="color:#9CA3AF;font-size:10px;margin-top:3px">
+            ${lat.toFixed(4)}, ${lng.toFixed(4)} ·
+            <a href="#" onclick="navigator.clipboard.writeText('${lat.toFixed(6)},${lng.toFixed(6)}');this.textContent='Copied';setTimeout(()=>{this.textContent='Copy'},1200);return false;" style="color:#9CA3AF;text-decoration:underline;cursor:pointer">Copy</a> ·
+            <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer" style="color:#FF6B2B;text-decoration:underline">Open in Maps</a>
+          </div>
+          <div style="color:#9CA3AF;font-size:10px;margin-top:2px">${updatedAgo}</div>
         </div>`;
       propsById[d.id] = { id: d.id, color, emoji: CATEGORY_EMOJI, popupHtml };
     });
