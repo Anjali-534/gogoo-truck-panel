@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import {
   LayoutDashboard, BookOpen, Truck, BarChart2,
-  Settings, ExternalLink, LogOut, Building2, Navigation,
+  Settings, ExternalLink, LogOut, Building2, Navigation, Map,
 } from 'lucide-react';
 
 const NAV = [
@@ -13,6 +13,7 @@ const NAV = [
   { href: '/truck/city', icon: Building2, label: 'City Delivery' },
   { href: '/truck/outstation', icon: Navigation, label: 'Outstation' },
   { href: '/truck/drivers', icon: Truck, label: 'Drivers' },
+  { href: '/truck/map', icon: Map, label: 'Live Map' },
   { href: '/truck/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/truck/settings', icon: Settings, label: 'Settings' },
 ];

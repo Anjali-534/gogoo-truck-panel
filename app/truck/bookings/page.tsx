@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { X, Phone, XCircle } from 'lucide-react';
 import Pagination from '@/components/Pagination';
+import OlaMap, { decodePolyline, OlaMarker } from '@/components/OlaMap';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
@@ -44,6 +45,31 @@ export default function TruckBookingsPage() {
   const [dateFilter, setDateFilter] = useState('today');
   const [selected, setSelected] = useState<any>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [selectedGeo, setSelectedGeo] = useState<{
+    pickup: { lat: number; lng: number }; drop: { lat: number; lng: number };
+    driver?: { lat: number; lng: number };
+  } | null>(null);
+  const [routeLine, setRouteLine] = useState<[number, number][] | undefined>(undefined);
+
+  useEffect(() => {
+    if (!selected) { setSelectedGeo(null); setRouteLine(undefined); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/gogoo/bookings/${selected.id}`, { headers: authHeaders() });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled || !data?.pickup || !data?.drop) return;
+        setSelectedGeo({ pickup: data.pickup, drop: data.drop, driver: data.driver?.lat != null ? data.driver : undefined });
+        try {
+          const rRes = await fetch(`${API}/gogoo/route?from=${data.pickup.lat},${data.pickup.lng}&to=${data.drop.lat},${data.drop.lng}`, { headers: authHeaders() });
+          const rData = await rRes.json();
+          if (!cancelled && rData?.polyline) setRouteLine(decodePolyline(rData.polyline));
+        } catch {}
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [selected]);
 
   const cancelBooking = async (bookingId: string) => {
     if (!confirm('Cancel this booking?')) return;
@@ -232,6 +258,20 @@ export default function TruckBookingsPage() {
                       <p className="text-sm text-gray-700">📍 <strong>Pickup:</strong> {selected.pickup_address || '—'}</p>
                       <p className="text-sm text-gray-500 mt-1">📍 <strong>Drop:</strong> {selected.drop_address || '—'}</p>
                       {selected.distance_km && <p className="text-sm text-gray-500 mt-1">📏 Distance: <strong>{selected.distance_km} km</strong></p>}
+                      {selectedGeo && (
+                        <div className="mt-3">
+                          <OlaMap
+                            className="w-full h-56 rounded-xl overflow-hidden"
+                            fitToMarkers
+                            route={routeLine || [[selectedGeo.pickup.lng, selectedGeo.pickup.lat], [selectedGeo.drop.lng, selectedGeo.drop.lat]]}
+                            markers={[
+                              { lng: selectedGeo.pickup.lng, lat: selectedGeo.pickup.lat, color: '#10B981', label: 'P', popup: '<b>Pickup</b>' },
+                              { lng: selectedGeo.drop.lng, lat: selectedGeo.drop.lat, color: '#3B82F6', label: 'D', popup: '<b>Drop</b>' },
+                              ...(selectedGeo.driver ? [{ lng: selectedGeo.driver.lng, lat: selectedGeo.driver.lat, color: '#FF6B2B', label: '🚛', popup: '<b>Driver</b>' } as OlaMarker] : []),
+                            ]}
+                          />
+                        </div>
+                      )}
                     </div>
                     {(selected.receiver_name || selected.receiver_phone || selected.notes) && (
                       <div className="border-t border-gray-100 pt-4">
