@@ -9,7 +9,7 @@ const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_
 const TRUCK_OS_TYPES = ['truck_os_14ft', 'truck_os_20ft', 'truck_os_container', 'truck_os_trailer'];
 const ALL_TRUCK_TYPES = [...TRUCK_CITY_TYPES, ...TRUCK_OS_TYPES];
 const STATUS_COLORS: Record<string, string> = {
-  completed: '#10B981', cancelled: '#EF4444', in_progress: '#3B82F6', accepted: '#F59E0B', searching: '#6B7280',
+  completed: '#10B981', cancelled: '#EF4444', in_progress: '#3B82F6', accepted: '#F59E0B', searching: '#6B7280', scheduled: '#0EA5E9',
 };
 const PAGE_SIZE = 50;
 
@@ -175,6 +175,7 @@ export default function TruckBookingsPage() {
           </select>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400">
             <option value="all">All Status</option>
+            <option value="scheduled">Scheduled</option>
             <option value="searching">Searching</option>
             <option value="accepted">Accepted</option>
             <option value="in_progress">In Progress</option>
@@ -253,6 +254,17 @@ export default function TruckBookingsPage() {
                       <div><p className="text-xs text-gray-400 mb-1">Vehicle</p><p className="font-semibold">{getTruckSize(slug)}</p></div>
                     </div>
                     <div><p className="text-xs text-gray-400 mb-1">Status</p><span className="text-sm px-3 py-1 rounded-full font-medium capitalize" style={{ backgroundColor: `${STATUS_COLORS[selected.status || ''] || '#6B7280'}20`, color: STATUS_COLORS[selected.status || ''] || '#6B7280' }}>{selected.status?.replace('_', ' ') || 'unknown'}</span></div>
+                    {selected.is_scheduled && selected.scheduled_at && (
+                      <div className="border-t border-gray-100 pt-4">
+                        <p className="text-xs text-gray-400 mb-1">Scheduled Pickup</p>
+                        <p className="font-semibold" style={{ color: '#0EA5E9' }}>
+                          {new Date(selected.scheduled_at).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        {selected.status === 'scheduled' && (
+                          <p className="text-xs text-gray-400 mt-1">Not yet dispatched — driver matching starts ~15 min before pickup</p>
+                        )}
+                      </div>
+                    )}
                     <div className="border-t border-gray-100 pt-4">
                       <p className="text-xs text-gray-400 mb-2">Route</p>
                       <p className="text-sm text-gray-700">📍 <strong>Pickup:</strong> {selected.pickup_address || '—'}</p>
