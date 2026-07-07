@@ -71,7 +71,7 @@ export default function TruckLoginPage() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="truck@gogoo.in"
+                placeholder="truck@bogie.in"
                 className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none
                   transition-colors placeholder-blue-900"
                 style={{ backgroundColor: '#0F1F33', border: '1px solid #2D5A8E' }}
