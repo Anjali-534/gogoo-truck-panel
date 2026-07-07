@@ -2,9 +2,10 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import {
   LayoutDashboard, BookOpen, Truck, BarChart2,
-  Settings, ExternalLink, LogOut, Building2, Navigation, Map,
+  Settings, ExternalLink, LogOut, Building2, Navigation, Map, Bell,
 } from 'lucide-react';
 
 const NAV = [
@@ -14,6 +15,7 @@ const NAV = [
   { href: '/truck/outstation', icon: Navigation, label: 'Outstation' },
   { href: '/truck/drivers', icon: Truck, label: 'Drivers' },
   { href: '/truck/map', icon: Map, label: 'Live Map' },
+  { href: '/truck/notifications', icon: Bell, label: 'Notifications' },
   { href: '/truck/analytics', icon: BarChart2, label: 'Analytics' },
   { href: '/truck/settings', icon: Settings, label: 'Settings' },
 ];
@@ -38,6 +40,7 @@ export default function TruckLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-gray-50">
+      <Toaster position="top-right" />
       {/* Navy Sidebar */}
       <aside className="w-56 h-screen flex flex-col fixed left-0 top-0 z-30" style={{ backgroundColor: '#1E3A5F' }}>
         {/* Logo */}
