@@ -48,7 +48,7 @@ export default function TruckLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-3">
             <span className="text-3xl">🚛</span>
             <div>
-              <p className="text-white font-bold text-base leading-tight">gogoo</p>
+              <p className="text-white font-bold text-base leading-tight">bogie</p>
               <p className="text-xs font-medium" style={{ color: '#93C5FD' }}>Truck Operations</p>
             </div>
           </div>

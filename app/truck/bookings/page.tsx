@@ -299,7 +299,7 @@ export default function TruckBookingsPage() {
                         <div className="flex justify-between text-sm"><span className="text-gray-500">Estimated</span><span>₹{selected.estimated_fare || 0}</span></div>
                         <div className="flex justify-between text-sm font-semibold"><span className="text-gray-700">Final Fare</span><span style={{ color: '#3B82F6' }}>₹{selected.final_fare || selected.estimated_fare || 0}</span></div>
                         <div className="border-t border-gray-100 pt-1">
-                          <div className="flex justify-between text-xs text-gray-400"><span>gogoo Commission (20%)</span><span>₹{Math.round((selected.final_fare || selected.estimated_fare || 0) * 0.2)}</span></div>
+                          <div className="flex justify-between text-xs text-gray-400"><span>bogie Commission (20%)</span><span>₹{Math.round((selected.final_fare || selected.estimated_fare || 0) * 0.2)}</span></div>
                           <div className="flex justify-between text-xs text-gray-400 mt-0.5"><span>Driver Earnings (80%)</span><span>₹{Math.round((selected.final_fare || selected.estimated_fare || 0) * 0.8)}</span></div>
                         </div>
                       </div>

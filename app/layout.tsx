@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "gogoo Truck Operations Panel",
-  description: "Truck & Logistics Dashboard — gogoo",
+  title: "bogie Truck Operations Panel",
+  description: "Truck & Logistics Dashboard — bogie",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

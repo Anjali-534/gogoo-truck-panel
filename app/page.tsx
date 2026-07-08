@@ -53,9 +53,9 @@ export default function TruckLoginPage() {
 
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🚛</div>
-          <h1 className="text-2xl font-bold text-white">gogoo</h1>
+          <h1 className="text-2xl font-bold text-white">bogie</h1>
           <p className="text-sm mt-1 font-semibold" style={{ color: '#60A5FA' }}>Truck Operations Panel</p>
-          <p className="text-xs mt-0.5" style={{ color: '#93C5FD' }}>gogoo Logistics</p>
+          <p className="text-xs mt-0.5" style={{ color: '#93C5FD' }}>bogie Logistics</p>
         </div>
 
         <div className="rounded-2xl p-8 border" style={{ backgroundColor: '#1E3A5F', borderColor: '#2D5A8E' }}>
@@ -113,7 +113,7 @@ export default function TruckLoginPage() {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: '#2D5A8E' }}>
-          gogoo Truck Operations · Aggarwal Publicity and Marketing Pvt. Ltd.
+          bogie Truck Operations · Aggarwal Publicity and Marketing Pvt. Ltd.
         </p>
       </div>
     </div>
