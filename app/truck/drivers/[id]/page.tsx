@@ -16,6 +16,31 @@ const VEHICLE_LABEL: Record<string, string> = {
 function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('truck_admin_token') : ''; }
 function authHeaders() { return { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' }; }
 
+// Key-value row for the Registration Details card — empty/null values
+// always render as "—", never blank or "null"/"undefined".
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  const isEmpty = value === null || value === undefined || value === '';
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-semibold text-gray-900 text-right">{isEmpty ? '—' : value}</span>
+    </div>
+  );
+}
+function FieldSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: '#3B82F6' }}>{title}</p>
+      <div>{children}</div>
+    </div>
+  );
+}
+const yesNo = (v: any) => (v ? '✅ Yes' : '❌ No');
+function fmtFullDate(iso?: string) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 export default function TruckDriverDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -105,6 +130,59 @@ export default function TruckDriverDetailPage() {
             <p className="text-2xl font-bold mt-1" style={{ color: '#3B82F6' }}>{s.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Registration Details */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-base font-bold text-gray-900 mb-4">Registration Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-5">
+          <FieldSection title="Personal Information">
+            <Field label="Full Name" value={driver.name} />
+            <Field label="Email" value={driver.email} />
+            <Field label="Phone Number" value={driver.phone} />
+          </FieldSection>
+
+          <FieldSection title="Vehicle Information">
+            <Field label="Vehicle Type" value={driver.vehicle_type?.replace(/_/g, ' ')} />
+            <Field label="Category" value={driver.vehicle_category} />
+            <Field label="Vehicle Number" value={driver.vehicle_number} />
+            <Field label="Vehicle Model" value={driver.vehicle_model} />
+            <Field label="Vehicle Color" value={driver.vehicle_color} />
+          </FieldSection>
+
+          <FieldSection title="Financial / Payout">
+            <Field label="Bank Account Holder" value={driver.bank_account_holder} />
+            <Field label="Bank Account Number" value={driver.bank_account_number} />
+            <Field label="Bank IFSC" value={driver.bank_ifsc} />
+            <Field label="Bank Name" value={driver.bank_name} />
+            <Field label="UPI ID" value={driver.upi_id} />
+            <Field label="GST Number" value={driver.gst_number} />
+          </FieldSection>
+
+          <FieldSection title="Account & Verification">
+            <Field label="Referral Code" value={driver.referral_code} />
+            <Field label="Referred By" value={driver.referred_by_code} />
+            <Field label="MVAG Declaration" value={
+              driver.mvag_declaration_accepted
+                ? `✅ Accepted${driver.mvag_declaration_at ? ` on ${fmtFullDate(driver.mvag_declaration_at)}` : ''}`
+                : '❌ Not accepted'
+            } />
+            <Field label="Background Check" value={driver.background_check_status} />
+            <Field label="Registration Fee Paid" value={yesNo(driver.registration_fee_paid)} />
+            <Field label="Wallet Balance" value={`₹${Number(driver.wallet_balance ?? 0).toLocaleString('en-IN')}`} />
+            <Field label="Verified" value={yesNo(driver.is_verified)} />
+            <Field label="Online" value={yesNo(driver.is_online)} />
+            <Field label="Blocked" value={driver.is_blocked ? `🚫 Yes — ${driver.block_reason || 'no reason given'}` : 'No'} />
+          </FieldSection>
+
+          <FieldSection title="Timestamps">
+            <Field label="Joined" value={fmtFullDate(driver.created_at)} />
+            <Field label="Last Location Update" value={fmtFullDate(driver.location_updated_at)} />
+          </FieldSection>
+        </div>
+        <p className="text-xs text-gray-400 mt-5 pt-4 border-t border-gray-100">
+          KYC documents are reviewed in the Documents section below — this card covers everything else collected at signup.
+        </p>
       </div>
 
       {/* Documents */}
