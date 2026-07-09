@@ -140,6 +140,8 @@ export default function TruckDriverDetailPage() {
             <Field label="Full Name" value={driver.name} />
             <Field label="Email" value={driver.email} />
             <Field label="Phone Number" value={driver.phone} />
+            <Field label="Date of Birth" value={driver.date_of_birth ? new Date(driver.date_of_birth).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null} />
+            <Field label="Address" value={driver.address} />
           </FieldSection>
 
           <FieldSection title="Vehicle Information">
@@ -180,13 +182,17 @@ export default function TruckDriverDetailPage() {
             <Field label="Last Location Update" value={fmtFullDate(driver.location_updated_at)} />
           </FieldSection>
         </div>
-        <p className="text-xs text-gray-400 mt-5 pt-4 border-t border-gray-100">
-          KYC documents are reviewed in the Documents section below — this card covers everything else collected at signup.
-        </p>
+        <button
+          onClick={() => document.getElementById('documents-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="w-full text-left text-xs hover:opacity-80 font-semibold mt-5 pt-4 border-t border-gray-100 transition"
+          style={{ color: '#3B82F6' }}
+        >
+          📄 KYC documents are reviewed in the Documents section below →
+        </button>
       </div>
 
       {/* Documents */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div id="documents-section" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <h3 className="font-semibold text-gray-800 mb-4">Documents</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {DOCS.map(doc => {
