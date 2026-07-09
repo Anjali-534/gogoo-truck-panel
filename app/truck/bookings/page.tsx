@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { X, Phone, XCircle } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import OlaMap, { decodePolyline, OlaMarker } from '@/components/OlaMap';
+import { DateRangeFilter, SortToggle, ScrollBody, rangeToParams, type DateRangeValue, type SortDir } from '@/components/TableControls';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
@@ -42,7 +43,10 @@ export default function TruckBookingsPage() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [vehicleFilter, setVehicleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('today');
+  // Default matches this page's prior default ("today") — the standardized
+  // date-range control replaces the old ad-hoc dateFilter select 1:1.
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ range: 'today' });
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [selected, setSelected] = useState<any>(null);
   const [cancelling, setCancelling] = useState(false);
   const [selectedGeo, setSelectedGeo] = useState<{
@@ -95,21 +99,18 @@ export default function TruckBookingsPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/gogoo/bookings`, { headers: authHeaders() });
+      const params = new URLSearchParams({ ...rangeToParams(dateRange), sort: sortDir });
+      const res = await fetch(`${API}/gogoo/bookings?${params.toString()}`, { headers: authHeaders() });
       const data = await res.json();
       const all = Array.isArray(data) ? data : data.data || data.bookings || [];
       setBookings(all.filter(isTruckBooking));
     } catch { /**/ } finally { setLoading(false); }
-  }, []);
+  }, [dateRange, sortDir]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { setPage(1); }, [dateRange, sortDir, typeFilter, vehicleFilter, statusFilter, search]);
 
   const filtered = bookings.filter(b => {
-    const now = new Date();
-    const created = b.created_at ? new Date(b.created_at) : null;
-    if (dateFilter === 'today' && created?.toDateString() !== now.toDateString()) return false;
-    if (dateFilter === 'week') { const wa = new Date(now); wa.setDate(wa.getDate() - 7); if (!created || created < wa) return false; }
-    if (dateFilter === 'month') { const ma = new Date(now); ma.setMonth(ma.getMonth() - 1); if (!created || created < ma) return false; }
     const slug = b.service_type?.slug || b.vehicle_type || '';
     if (typeFilter === 'city' && !TRUCK_CITY_TYPES.includes(slug) && !slug.includes('city')) return false;
     if (typeFilter === 'outstation' && !TRUCK_OS_TYPES.includes(slug) && !slug.includes('os')) return false;
@@ -182,12 +183,10 @@ export default function TruckBookingsPage() {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <select value={dateFilter} onChange={e => { setDateFilter(e.target.value); setPage(1); }} className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400">
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="all">All Time</option>
-          </select>
+          <SortToggle value={sortDir} onChange={setSortDir} />
+        </div>
+        <div className="mt-3">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
         </div>
       </div>
 
@@ -195,21 +194,22 @@ export default function TruckBookingsPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-gray-100"><p className="text-sm text-gray-500">{filtered.length} bookings</p></div>
         {filtered.length === 0 ? <div className="p-16 text-center text-gray-400 text-sm">No bookings found</div> : (
-          <div className="overflow-x-auto">
+          <ScrollBody>
             <table className="w-full text-sm">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {['Booking ID', 'Type', 'Vehicle', 'Rider', 'Driver', 'Pickup', 'Drop', 'Dist', 'Fare', 'Status', 'Time', ''].map(h => (
+                  {['#', 'Booking ID', 'Type', 'Vehicle', 'Rider', 'Driver', 'Pickup', 'Drop', 'Dist', 'Fare', 'Status', 'Time', ''].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {paginated.map((b: any) => {
+                {paginated.map((b: any, i: number) => {
                   const slug = b.service_type?.slug || b.vehicle_type || '';
                   const isCity = TRUCK_CITY_TYPES.includes(slug) || slug.includes('city');
                   return (
                     <tr key={b.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-xs text-gray-400 font-medium">{(page - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">#{b.id?.slice(-8).toUpperCase()}</td>
                       <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium ${isCity ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{isCity ? '🏙 City' : '🗺 OS'}</span></td>
                       <td className="px-4 py-3 text-gray-600 text-xs">{getTruckSize(slug)}</td>
@@ -227,7 +227,7 @@ export default function TruckBookingsPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollBody>
         )}
         <div className="p-4 border-t border-gray-100">
           <Pagination page={page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />

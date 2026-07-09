@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, ShieldOff, Bell } from 'lucide-react';
 import Pagination from '@/components/Pagination';
+import { DateRangeFilter, SortToggle, ScrollBody, rangeToParams, type DateRangeValue, type SortDir } from '@/components/TableControls';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://gogobackend-production.up.railway.app';
 const TRUCK_CITY_TYPES = ['truck_city_tata_ace', 'truck_city_14ft', 'truck_city_open', 'truck_city_container'];
@@ -31,18 +32,22 @@ export default function TruckDriversPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ range: 'all_time' });
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [page, setPage] = useState(1);
 
   const fetchDrivers = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/gogoo/drivers`, { headers: authHeaders() });
+      const params = new URLSearchParams({ ...rangeToParams(dateRange), sort: sortDir });
+      const res = await fetch(`${API}/gogoo/drivers?${params.toString()}`, { headers: authHeaders() });
       const data = await res.json();
       const all = Array.isArray(data) ? data : data.data || data.drivers || [];
       setDrivers(all.filter((d: any) => ALL_TRUCK_TYPES.includes(d.vehicle_type || '') || d.vehicle_category === 'truck'));
     } catch { /**/ } finally { setLoading(false); }
-  }, []);
+  }, [dateRange, sortDir]);
 
   useEffect(() => { fetchDrivers(); }, [fetchDrivers]);
+  useEffect(() => { setPage(1); }, [dateRange, sortDir, tab, search]);
 
   async function toggleBlock(d: any) {
     const ep = d.is_blocked ? 'unblock' : 'block';
@@ -104,7 +109,8 @@ export default function TruckDriversPage() {
               {t.label}
             </button>
           ))}
-          <div className="flex-1 flex items-center justify-end px-4">
+          <div className="flex-1 flex items-center justify-end gap-2 px-4">
+            <SortToggle value={sortDir} onChange={setSortDir} />
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search drivers..." className="pl-8 pr-4 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400 w-52" />
@@ -112,16 +118,23 @@ export default function TruckDriversPage() {
           </div>
         </div>
 
+        {filtered.length > 0 && (
+          <div className="px-4 py-3 border-b border-gray-100">
+            <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          </div>
+        )}
+
         {filtered.length === 0 ? <div className="p-16 text-center text-gray-400 text-sm">No drivers found</div> : (
-          <div className="overflow-x-auto">
+          <ScrollBody>
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-100 bg-gray-50">{['Driver', 'Phone', 'Vehicle', 'Vehicle No.', 'Capacity', 'Rating', 'Rides Today', 'Total', 'Earnings', 'Wallet', 'Status', 'Docs', 'Actions'].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">{h}</th>)}</tr></thead>
+              <thead className="sticky top-0 z-10"><tr className="border-b border-gray-100 bg-gray-50">{['#', 'Driver', 'Phone', 'Vehicle', 'Vehicle No.', 'Capacity', 'Rating', 'Rides Today', 'Total', 'Earnings', 'Wallet', 'Status', 'Docs', 'Actions'].map(h => <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase whitespace-nowrap">{h}</th>)}</tr></thead>
               <tbody className="divide-y divide-gray-50">
-                {paginated.map((d: any) => {
+                {paginated.map((d: any, i: number) => {
                   const isCity = TRUCK_CITY_TYPES.includes(d.vehicle_type || '');
                   const capacities: Record<string, string> = { truck_city_tata_ace: '500kg', truck_city_14ft: '3T', truck_city_open: '5T', truck_city_container: '8T', truck_os_14ft: '3T', truck_os_20ft: '5T', truck_os_container: '8T', truck_os_trailer: '20T' };
                   return (
                     <tr key={d.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-xs text-gray-400 font-medium">{(page - 1) * PAGE_SIZE + i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: '#3B82F6' }}>{d.name?.charAt(0) || '?'}</div>
@@ -155,7 +168,7 @@ export default function TruckDriversPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollBody>
         )}
         <div className="p-4 border-t border-gray-100"><Pagination page={page} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} /></div>
       </div>
