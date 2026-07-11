@@ -108,6 +108,7 @@ function ComposeForm({ onSent }: { onSent: () => void }) {
     e.preventDefault();
     if (!form.title.trim() || !form.body.trim()) { toast.error('Title and message are required'); return; }
     if (mode === 'select' && selected.length === 0) { toast.error('Select at least one driver'); return; }
+    if (mode === 'broadcast' && !confirm('Send this to ALL truck drivers? Every truck driver will get a push notification.')) return;
     setSending(true);
     try {
       await axios.post(`${API}/gogoo/admin/notifications`, {
