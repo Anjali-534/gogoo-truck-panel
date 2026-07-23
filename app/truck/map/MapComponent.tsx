@@ -82,6 +82,7 @@ export default function MapComponent() {
       style: STYLE_URL,
       center: [77.2090, 28.6139],
       zoom: 11,
+      attributionControl: false,
       transformRequest: (url: string) => {
         if (url.includes("api.olamaps.io") && !url.includes("api_key")) {
           return { url: url + (url.includes("?") ? "&" : "?") + `api_key=${OLA_KEY}` };
@@ -90,6 +91,15 @@ export default function MapComponent() {
       },
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
+    // Ola's own tile responses ship an empty attribution string, so without this
+    // MapLibre GL JS falls back to its library-default placeholder ("MapLibre"
+    // linking to maplibre.org) instead of real, ToS-required credit. Ola Maps'
+    // Platform Terms (Section 16) require attribution to "Ola Maps" linking to
+    // openstreetmap.org/copyright (data is ODbL/OpenStreetMap-derived).
+    map.addControl(new maplibregl.AttributionControl({
+      compact: true,
+      customAttribution: '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Ola Maps</a>',
+    }));
 
     map.on("load", () => {
       map.addSource("drivers", { type: "geojson", data: emptyFC(), cluster: true, clusterMaxZoom: 14, clusterRadius: 50 });
